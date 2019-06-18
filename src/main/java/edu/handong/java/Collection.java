@@ -17,15 +17,14 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import edu.handong.java.model.ExcelZip;
+import edu.handong.java.model.ZipReader;
 import edu.handong.java.utils.Util;
 
 public class Collection {
 	
-	private ArrayList<ExcelZip> zips;
+	private ArrayList<ZipReader> zips;
 	
-	public void run(String args[])
-	{
+	public void run(String args[]){
 		CommandLineParser parser = new DefaultParser();
 
 		Options options = createOptions();
@@ -33,7 +32,7 @@ public class Collection {
 		String rootDirectory = "";
 		String resultPath = "";
 		
-		try{
+		try {
 			CommandLine cmd = parser.parse(options, args);
 			
 			File file = new File(cmd.getOptionValue("i"));
@@ -42,7 +41,7 @@ public class Collection {
 			String fileName = file.getName();
 			String fileFullPath = file.getCanonicalPath();
 			
-			if (file.isFile() && Util.getExtension(fileName).equals("zip")) {// if zip file Decompress 
+			if (file.isFile() && Util.getExtension(fileName).equals("zip")) { // if zip file Decompress 
 				// unzip.
 				Util.unzip(file, file.getParentFile());
 
@@ -68,22 +67,22 @@ public class Collection {
 		
 		File[] directoryListing = rootDir.listFiles();
 		
-		zips = new ArrayList<ExcelZip>();
+		zips = new ArrayList<ZipReader>();
 		
 	    for(File child : directoryListing){  // Create a ZipFile object with the compressed files under the directory.
 	    	if (Util.getExtension(child.getName()).equals("zip")){
 	    		try {
-					zips.add(new ExcelZip(child.getCanonicalPath()));
+					zips.add(new ZipReader(child.getCanonicalPath()));
 				}catch (IOException e){
 					e.printStackTrace();
 				}
 	    	}
 	    }
 	    
-	    zips.sort(new Comparator<ExcelZip>(){				// Sort by file name
+	    zips.sort(new Comparator<ZipReader>(){	// Sort by file name
 			
 	    	@Override
-			public int compare(ExcelZip object1, ExcelZip object2) {
+			public int compare(ZipReader object1, ZipReader object2) {
 				String s1 = object1.getFile().getName();
 				String s2 = object2.getFile().getName();
 				
@@ -93,14 +92,14 @@ public class Collection {
 		
 		ArrayList<Thread> threadsForZipFile = new ArrayList<Thread>();
 		
-		for(ExcelZip runner:zips) {		// All threads started
+		for(ZipReader runner:zips) {		// All threads started
 			
 			Thread thread = new Thread(runner);
 			//System.out.println(runner.getFile().getName());
 			thread.start();
 			threadsForZipFile.add(thread);
 		}
-		// wait.
+		// wait
 		try {
 			for(Thread runner:threadsForZipFile) {
 				runner.join();
@@ -109,7 +108,7 @@ public class Collection {
 			System.out.println(e.getMessage());
 			System.exit(-1);
 		}
-		// combine
+		// collect
 		saveCSV(resultPath);
 	}
 	
@@ -132,7 +131,7 @@ public class Collection {
 			pw1.println("zip number, 제목, 요약문 (300자 내외), \"핵심어 (keyword,쉽표로 구분)\", 조회날짜, 실제자료조회 출처 (웹자료링크), 원출처 (기관명 등), 제작자 (Copyright 소유처)");
 			pw2.println("zip number, 제목(반드시 요약문 양식에 입력한 제목과 같아야 함.), 표/그림 일련번호, \"자료유형(표,그림,…)\", 자료에 나온 표나 그림 설명(캡션), 자료가 나온 쪽번호");
 			
-			for(ExcelZip zipfile:zips){
+			for(ZipReader zipfile:zips){
 				for (String cell:zipfile.getExcelFiles().get(0).getRawData()){
 					pw1.print(Util.getPathNoExt(zipfile.getFile().getName()));
 					pw1.println(cell);
@@ -143,7 +142,7 @@ public class Collection {
 			}
 			pw1.close();
 			pw2.close();
-		}catch(Exception{
+		}catch(Exception e){
 			System.out.println(e.getMessage());
 		}
 	}
